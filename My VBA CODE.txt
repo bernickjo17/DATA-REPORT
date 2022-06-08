@@ -1,0 +1,80 @@
+
+
+ Sub price()
+
+
+
+Dim OutlookOpened As Boolean
+Dim outApp As Outlook.Application
+Dim outNs As Outlook.NameSpace
+Dim outFolder As Outlook.MAPIFolder
+Dim outAttachment As Outlook.Attachment
+Dim outItem As Object
+Dim saveFolder As String
+Dim outMailItem As Outlook.MailItem
+Dim inputDate As String, subjectFilter As String, sFolderName As String
+Dim fso As Object
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+saveFolder = "C:\Users\bremanda\OneDrive - Global Independent Administrators\price" & "\" & sFolderName
+
+subjectFilter = "Price"
+
+DisplayName = "xls"
+
+OutlookOpened = False
+On Error Resume Next
+Set outApp = GetObject(, "Outlook.Application")
+If Err.Number <> 0 Then
+    Set outApp = New Outlook.Application
+    OutlookOpened = True
+End If
+On Error GoTo Err_Control
+
+If outApp Is Nothing Then
+    MsgBox "Cannot start Outlook.", vbExclamation
+    Exit Sub
+End If
+
+
+
+Set outNs = outApp.GetNamespace("MAPI")
+Set outFolder = outNs.GetDefaultFolder(olFolderInbox)
+
+If Not outFolder Is Nothing Then
+    For Each outItem In outFolder.Items
+        If outItem.Class = Outlook.OlObjectClass.olMail Then
+            Set outMailItem = outItem
+            If InStr(1, outMailItem.Subject, subjectFilter) > 0 Then 'removed the quotes around subjectFilter
+                If outMailItem.ReceivedTime >= (Date - 1) Then
+                    For Each outAttachment In outMailItem.Attachments
+                        If Dir(saveFolder, vbDirectory) = "" Then fso.CreateFolder (saveFolder)
+                        If InStr(outAttachment.FileName, DisplayName) > 0 Then
+                            outAttachment.SaveAsFile saveFolder & outAttachment.FileName
+                            Set outAttachment = Nothing
+                        End If
+                    Next
+                End If
+            End If
+        End If
+    Next
+End If
+
+If OutlookOpened Then outApp.Quit
+Set outApp = Nothing
+Err_Control:
+If Err.Number <> 0 Then
+    MsgBox Err.Description
+End If
+
+
+End Sub
+
+
+
+
+
+
+Private Sub Application_ItemSend(ByVal Item As Object, Cancel As Boolean)
+
+End Sub
